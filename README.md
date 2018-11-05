@@ -4,6 +4,8 @@
 
 (c) Kevin Edwards 1986-2018
 
+![Screenshot](screenshot.png)
+
 In 1986 I began writing a motorcycle racing game for the BBC Micro, Electron and Master 128 home computers. This game was published by Superior Software in 1987 under the name Crazee Rider.
 
 The game is written entirely in 6502 assemmbly language. The target computers had only 32K bytes of RAM. Of which 10K bytes was required for the video memory.
