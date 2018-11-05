@@ -1,0 +1,353 @@
+\\
+\\ Crazee Rider ( BBC Micro ) from the original 6502 source code, adapted to assemble using beebasm
+\\ (c) Kevin Edwards 1986-2018
+\\ Twitter @KevEdwardsRetro
+
+\\ REM SAVE"MODULE"
+\\ B%=P%
+\\ [OPT pass
+
+\\ Re-map EQUS strings for this file - reset below!
+MAPCHAR ' ','Z', 0
+
+.oldvec
+ EQUW &FFFF
+ 
+ JMP myirq:\ Jump to my IRQ handler
+ 
+\ Event 4 (frame sync) routine
+ 
+.framev
+ LDA #&A0:STA &FE6E:\ Enable T2 IRQs
+ LDA #0:STA &FE68:STA palsec:\ A MUST be 0 for palsec!!!!
+ LDA #&1A:STA &FE69
+ STY yirqsave
+ LDY #3
+.irqsetpal
+ LDA newpal,Y
+ STA &FE21
+ DEY:BPL irqsetpal
+ LDY yirqsave
+.irqex
+ PLP:RTS:\ Exit event routine back to MOS
+ 
+.newpal
+ EQUB &F4:EQUB &E4:EQUB &B4:EQUB &A4:\ colour 3 to yellow
+ 
+.newpal2
+ EQUB &F0:EQUB &E0:EQUB &B0:EQUB &A0:\ colour 3 to white
+ EQUB &72:EQUB &62:EQUB &32:EQUB &22:\ colour 1 to magenta
+ 
+.yirqsave
+ EQUB 0
+ 
+.palist
+ EQUB newpal2 MOD 256:EQUB palback MOD 256
+.palish
+ EQUB newpal2 DIV 256:EQUB palback DIV 256
+ 
+.palsec
+ EQUB 0
+ 
+.myirq
+ LDA &FE6D:BPL tomos
+ AND #&20:BEQ tomos
+ STY yirqsave
+ LDY palsec:LDA palist,Y:STA myirq0+1
+ LDA palish,Y:STA myirq0+2
+ LDY #7
+.myirq0
+ LDA &FFFF,Y
+ STA &FE21
+ DEY:BPL myirq0
+ LDA palsec:BEQ tomo1
+ 
+ LDA #&20:STA &FE6E:\ T2 IRQs off
+ BNE tomo0:\ always
+.tomo1
+ INC palsec:LDA #&F0:STA &FE68:LDA #2:STA &FE69
+.tomo0
+ LDY yirqsave
+.tomos
+ LDA &FC
+ JMP (oldvec)
+ 
+.palback
+ EQUB &76:EQUB &66:EQUB &36:EQUB &26:\ colour 1 to red
+ EQUB &76:EQUB &66:EQUB &36:EQUB &26:\ colour 1 to red
+ 
+.pstring
+ LDA strptab,Y:STA temp1
+ CLC:ADC #3:STA charloc+1
+ LDA strptab+1,Y:STA temp1+1
+ ADC #0:STA charloc+2
+ 
+ LDY #0
+ LDA (temp1),Y:TAX
+ AND #&F8:STA temp2
+ TXA:AND #3:STA temp3+1:\ pix.off.
+ INY:LDA (temp1),Y:STA temp2+1
+ INY:LDA (temp1),Y
+ AND #&88:STA temp4+1:STA temp5
+ LDX temp3+1:BEQ charloc
+.pst0
+ LSR temp5
+ DEX:BNE pst0
+ 
+.charloc
+ LDA &FFFF
+ BMI pst_pixright
+ STA temp4
+ LDX #charset DIV 256
+ ASL A:ASL A:\ I assume A<64!
+ ADC temp4:BCC pst1
+ INX:CLC
+.pst1
+ ADC #charset MOD 256
+ BCC pst2
+ INX
+.pst2
+ STA charbase+1:STX charbase+2
+ LDX #0
+.charbase
+ LDA &FFFF,X
+ STA temp5+1:\ char. def. byte
+ LDY #7
+.pst3
+ ASL temp5+1:\ test 1 in char.def.
+ BCC pst4:\ Skip if pixel unset!
+ LDA temp5:\ colour shift byte
+ EOR (temp2),Y
+ STA (temp2),Y
+.pst4
+ DEY:BPL pst3
+ JSR pst_pixright
+ INX:CPX #5:BNE charbase
+ JSR pst_pixright
+ INC charloc+1:BNE charloc
+ INC charloc+2:JMP charloc
+ 
+.pst_pixright
+ LSR temp5
+ INC temp3+1:LDA temp3+1
+ CMP #4:BCC pst_pr0
+ 
+ LDA #0:STA temp3+1
+ LDA temp4+1:STA temp5
+ LDA temp2:ADC #7:\ c=1 here!
+ STA temp2
+ BCC pst_pr0
+ INC temp2+1
+.pst_pr0
+ RTS
+ 
+.strptab
+ EQUW gamename
+ EQUW myname
+ EQUW superior
+ EQUW prespc
+ EQUW timbon
+ EQUW txbondig
+ EQUW trkcomp
+ EQUW younotqual
+ EQUW txnewh
+ EQUW todays
+ EQUW trackvalue
+ EQUW keylet
+ EQUW txnam
+ EQUW pwrd1:\      Passwords in 'TRACK1'
+ EQUW pwrd2
+ EQUW wdone:\ In 'TRACK1'
+ EQUW txhsline:\ In 'HIGH'
+ EQUW txent:\ In 'HIGH'
+ EQUW pwrd3
+ 
+.gamename
+ EQUW &6118:EQUB &88
+ EQUS "CRAZEE RIDER"
+ EQUB &FF
+ 
+.myname
+ EQUW &6380:EQUB &80
+ EQUS "BY KEVIN EDWARDS"
+ EQUB &FF
+ 
+.superior
+ EQUW &74C8:EQUB &08
+ EQUS "(C) SUPERIOR SOFTWARE '87"
+ EQUB &FF
+ 
+.prespc
+ EQUW &7130:EQUB &88
+ EQUS "PRESS SPACE TO PLAY"
+ EQUB &FF
+ 
+.timbon
+ EQUW &64A8:EQUB &88
+ EQUS "'HITS' BONUS :"
+ EQUB &FF
+ 
+.txbondig
+ EQUW &6558:EQUB &80
+.bonusdig
+ EQUS "00000"
+ EQUB &FF
+ 
+.trkcomp
+ EQUW &6108:EQUB &08
+ EQUS "TRACK COMPLETED"
+ EQUB &FF
+ 
+.younotqual
+ EQUW &725A:EQUB &88
+ EQUS "YOU HAVE NOT QUALIFIED"
+ EQUB &FF
+ 
+.txnewh
+ EQUW &60FA:EQUB &08
+ EQUS "A NEW HIGH SCORE!"
+ EQUB &FF
+ 
+ 
+.todays
+ EQUW &60F0:EQUB &08
+ EQUS "TODAY'S BEST SCORES"
+ EQUB &FF
+ 
+.trackvalue
+ EQUW &69EA:EQUB &80
+ EQUS "TRACK "
+.txttrknum
+ EQUS "001"
+ EQUB &FF
+ 
+.keylet
+ EQUW &FFFF:EQUB &80
+.keychar
+ EQUB 0:\ self modified
+ EQUB &FF
+ 
+.txnam
+ EQUW &6C40:EQUB &88:\ Low byte is self modified
+.ttnam
+ EQUS "12345678901234"
+ EQUB &FF
+ 
+.sndskd EQUW &13:EQUW 2:EQUW 140:EQUW 10
+.cbsndlit
+ EQUW &13:EQUW -15:EQUW 0:EQUW 0
+.cbsndbon
+ EQUW &13:EQUW -15:EQUW 130:EQUW 1
+ 
+.cbsndbrm
+ EQUW &11:EQUW 1:EQUW 30:EQUW 10
+.cbsndbr2
+ EQUW &10:EQUW 4:EQUW 7:EQUW 10
+ 
+.sndcrun LDX #cbcru MOD 256:LDY #cbcru DIV 256:JSR sound
+ LDX #cbcr2 MOD 256:LDY #cbcr2 DIV 256:BNE sound
+.cbcru EQUW &10:EQUW -15:EQUW 7:EQUW 10
+.cbcr2 EQUW &11:EQUW 3:EQUW 255:EQUW 10
+.brm
+ JSR rand:BPL brm0
+ RTS
+.brm0
+ LDA cbsndbrm:EOR #3:STA cbsndbrm
+ CMP #&11:BNE brm1
+ LDX #cbsndbr2 MOD 256:LDY #cbsndbr2 DIV 256:JSR sound
+.brm1
+ LDX #cbsndbrm MOD 256:LDY #cbsndbrm DIV 256:BNE sound
+ 
+.sndlit
+ STX cbsndlit+4
+ LDA #6
+ CPX #60:BEQ snlit0
+ ASL A
+.snlit0
+ STA cbsndlit+6
+ LDX #cbsndlit MOD 256
+ LDY #cbsndlit DIV 256
+ 
+.sound
+ BIT fsound:BPL sndisoff
+ LDA #7:JMP osword
+.sndisoff
+ RTS
+ 
+.sndbon
+ LDX #cbsndbon MOD 256
+ LDY #cbsndbon DIV 256
+ BNE sound:\ always
+ 
+.sndrevs
+ LDA myspeed:LDY #4
+.snrev
+ CMP spdtab,Y:BCS snrev0:DEY:BNE snrev
+.snrev0
+ LDA myspeed
+ SEC:SBC spdtab,Y
+ ASL A
+ ADC spdbase,Y:TAX
+ LDA curvol:SEC:SBC #12:\ was 8
+ BCS snrev4
+ LDA #0
+.snrev4
+ STA curvol:CPX curvol:BCC snrev3:STX curvol
+.snrev3
+ LDX curvol
+ LDA myx:CMP #138:BCS adjpit
+ CMP #12:TXA:BCS norpit
+.adjpit
+ LDA seed+1:AND #7:CMP #3:TXA:BCS norpit
+ SBC #3
+.norpit
+ STA cbsnd11+4:LSR A:STA cbsnd12+4
+ LDA medisabled:BNE sndisoff
+ LDA argdel:BNE fxdely
+ LDX #cbsnd10 MOD 256:LDY #cbsnd10 DIV 256:JSR sound
+ LDX #cbsnd11 MOD 256:LDY #cbsnd11 DIV 256:JSR sound
+ LDX #cbsnd12 MOD 256:LDY #cbsnd12 DIV 256:BNE sound
+ 
+.cbsnd10 EQUW &10:EQUW -12:EQUW 3:EQUB 4
+.cbsnd11 EQUW &11:EQUW 0:EQUW 0:EQUW 4
+.cbsnd12 EQUW &12:EQUW -10:EQUW 0:EQUW 4
+ 
+.fxdely
+ DEC argdel:RTS
+ 
+.spdtab
+ EQUB 0:EQUB 30:EQUB 60:EQUB 90:EQUB 120
+.spdbase
+ EQUB 30:EQUB 55:EQUB 100:EQUB 130:EQUB 155
+ 
+.argh
+ EQUW &11:EQUW 8:EQUW 80:EQUW 4
+.arg2
+ EQUW &12:EQUW 8:EQUW 86:EQUW 4:\ Envelope 9 not used for C2 arg!
+ 
+.boucr
+ EQUW &10:EQUW -15:EQUW 7:EQUW 5
+.bouc2
+ EQUW &11:EQUW 10:EQUW 100:EQUW 5
+ 
+.bpass
+ EQUW &13:EQUW -10:EQUW 1:EQUW 3
+ 
+
+\\ Re-map Back to normal ASCII
+MAPCHAR ' ','Z', 32
+
+\\ ]
+\\ PRINT"900 module from &";~B%;" to &";~P%-1;" (";P%-B%;")"
+\\ P%=&E00:O%=HIMEM+&400:C%=P%
+\\ PAGE=PG%
+\\ RETURN
+ 
+\\ DEF FNmyascii(oldasc$)
+\\ IF pass>4 O%=O%+LEN(oldasc$):P%=P%+LEN(oldasc$):=pass
+\\ FORL%=1TOLEN(oldasc$)
+\\ ?(O%+L%-1)=ASC(MID$(oldasc$,L%,1))-32
+\\ NEXT
+\\ O%=O%+LEN(oldasc$)
+\\ P%=P%+LEN(oldasc$)
+\\ =pass

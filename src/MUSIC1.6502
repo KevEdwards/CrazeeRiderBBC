@@ -1,0 +1,176 @@
+\\
+\\ Crazee Rider ( BBC Micro ) from the original 6502 source code, adapted to assemble using beebasm
+\\ (c) Kevin Edwards 1986-2018
+\\ Twitter @KevEdwardsRetro
+
+\\ REM SAVE":2.MUSIC1"
+\\ REM "Crazee Rider" Music Program
+\\ REM 28th March 1987.
+\\ REM Beware! LIMITED FLEXIBILITY VERSION!
+ 
+ D1=0*64
+ D2=1*64
+ D3=2*64
+ D4=3*64
+ Rest=63
+ 
+\\  B%=P%
+\\ [OPT pass
+ 
+ \===================================================================
+ .StartTune
+      STY WK:LDA LT+0,Y:STA get+1:LDA LT+1,Y:STA get+2:LDA #0:STA IX+0
+      LDA LT+2,Y:STA IX+1:LDA LT+3,Y:STA IX+2:LDX LT+4,Y:LDY #3
+ .SL  LDA SPT,X:STA SPD,Y:DEX:DEY:BPL SL:LDY WK
+      LDA LT+5,Y:STA SND+2:LDA #1:LDX #2
+ .CL  STA CNT,X:DEX:BPL CL
+      LDX LT+6,Y:LDY #2
+ .DL  LDA DURATAB,X:STA DUR,Y:DEX:DEY:BPL DL:RTS
+ 
+ .Refresh
+      LDX #2:STX WK
+ .RL  LDX WK:DEC CNT,X:BNE NOC:LDY IX,X
+ .get LDA &DDDD,Y:BEQ NOC:INC IX,X:PHA:AND #Rest:CMP #Rest:BEQ ST:PLA:PHA
+      ASL A:ASL A
+      STA SND+4:TXA:CLC:ADC #&11:STA SND+0:LDA DUR,X
+      STA SND+6:LDX #SND MOD 256:LDY #SND DIV 256:JSR sound
+ .ST  PLA:ROL A:ROL A:ROL A:AND #3:TAX:LDA SPD,X:LDX WK:STA CNT,X
+ .NOC DEC WK:BPL RL:RTS
+ 
+ .MusicTest
+      LDA get+1:STA dat+1:LDA get+2:STA dat+2:LDX #2:LDA #0:PHP
+ .ML  LDY IX,X:PLP
+ .dat ORA &FFFF,Y:PHP:DEX:BPL ML:PLP:RTS
+ 
+ .Stop
+      LDX #HAL MOD 256:LDY #HAL DIV 256:STX get+1:STY get+2:LDA #0:LDX #3
+ .SL2  STA IX-1,X:DEX:BNE SL2:LDA #15:JMP &FFF4
+ 
+ \====================================================================
+ 
+ .SND EQUD &00DD00DD:EQUD &00DD00DD
+ .WK  EQUB 0
+ .CNT EQUS "012"
+ .IX  EQUS "012"
+ .SPD EQUS "0123"
+ .SPT EQUB 5:EQUB 10:EQUB 15:EQUB 20\In Between Levels
+      EQUB 3:EQUB 6:EQUB 9:EQUB 12\Every 6 Levels
+      EQUB 3:EQUB 6:EQUB 18:EQUB 36\New High Score
+ .DUR EQUS "012"
+ .DURATAB
+      EQUB 5:EQUB 5:EQUB 5\In Between Levels
+      EQUB 3:EQUB 3:EQUB 3\Every 6 Levels
+      EQUB 15:EQUB 15:EQUB 15\New High Score
+ 
+ \Data Look-up Table
+ \Contains all the gen pertaining to each individual tune.
+ 
+ \Order is as follows:
+ 
+ \Address of channel 1 data.         2
+ \Offset from ch. 1 to ch. 2 data.   1
+ \Offset from ch. 1 to ch. 3 data.   1
+ \Index into speeds table            1
+ \Envelope to use on ALL 3 channels  1
+ \Index into durations table         1
+ 
+ \         Addr1      Index2           Index3      Speed   Env     Dur
+ .LT  EQUW BETW1:EQUB BETW2-BETW1:EQUB BETW3-BETW1:EQUB 03:EQUB 6:EQUB 02
+      EQUW HIGH1:EQUB HIGH2-HIGH1:EQUB HIGH3-HIGH1:EQUB 11:EQUB 5:EQUB 08
+      EQUW EVRY61:EQUB EVRY62-EVRY61:EQUB EVRY63-EVRY61:EQUB 7:EQUB 7:EQUB 2
+ 
+ \Between Levels Music
+ 
+ .BETW1
+      EQUB 7+D1:EQUB 9+D1:EQUB 12+D1:EQUB 14+D1
+      EQUB 16+D1:EQUB 19+D1:EQUB 21+D1:EQUB 24+D1
+      EQUB 28+D1:EQUB 31+D1:EQUB 33+D1:EQUB 36+D1
+      EQUB 40+D1:EQUB 43+D1:EQUB 45+D1:EQUB 48+D1
+      EQUB 9+D1:EQUB 11+D1:EQUB 15+D1:EQUB 18+D1
+      EQUB 21+D1:EQUB 23+D1:EQUB 27+D1:EQUB 30+D1
+      EQUB 33+D1:EQUB 35+D1:EQUB 39+D1:EQUB 42+D1
+      EQUB 45+D1:EQUB 47+D1:EQUB 51+D1:EQUB 54+D1
+      EQUB 10+D1:EQUB 14+D1:EQUB 17+D1:EQUB 21+D1
+      EQUB 22+D1:EQUB 26+D1:EQUB 29+D1:EQUB 33+D1
+      EQUB 34+D1:EQUB 38+D1:EQUB 41+D1:EQUB 45+D1
+      EQUB 46+D1:EQUB 50+D1:EQUB 53+D1:EQUB 57+D1
+      EQUB 12+D1
+.HAL  EQUB 0
+ .BETW2
+\      EQUB 0
+      EQUB 9+D2:EQUB 9+D2:EQUB 21+D2:EQUB 9+D1:EQUB 9+D2:EQUB 9+D1
+      EQUB 9+D2:EQUB 21+D2:EQUB 9+D2
+      EQUB 9+D2:EQUB 9+D2:EQUB 21+D2:EQUB 9+D1:EQUB 9+D2:EQUB 9+D1
+      EQUB 9+D2:EQUB 21+D2:EQUB 9+D2
+      EQUB 9+D2:EQUB 9+D2:EQUB 21+D2:EQUB 9+D1:EQUB 9+D2:EQUB 9+D1
+      EQUB 9+D2:EQUB 21+D2:EQUB 9+D2
+      EQUB 9+D1
+      EQUB 0
+ .BETW3
+\      EQUB 0
+      EQUB 19+D2:EQUB 31+D2:EQUB 31+D1:EQUB 19+D1:EQUB 19+D1:EQUB 19+D1
+      EQUB 31+D2:EQUB 19+D2:EQUB 31+D1:EQUB 19+D1:EQUB 19+D2
+      EQUB 18+D2:EQUB 30+D2:EQUB 30+D1:EQUB 18+D1:EQUB 18+D1:EQUB 18+D1
+      EQUB 30+D2:EQUB 18+D2:EQUB 30+D1:EQUB 18+D1:EQUB 18+D2
+      EQUB 17+D2:EQUB 29+D2:EQUB 29+D1:EQUB 17+D1:EQUB 17+D1:EQUB 17+D1
+      EQUB 29+D2:EQUB 17+D2:EQUB 29+D1:EQUB 17+D1:EQUB 17+D2
+      EQUB 16+D1
+      EQUB 0
+ 
+ \Highest Score Fanfare
+ 
+ .HIGH1
+      EQUB Rest+D1
+ .HIGH2
+      EQUB 19+D2:EQUB 19+D1:EQUB 19+D1:EQUB 19+D1:EQUB 19+D1
+      EQUB 21+D2:EQUB 19+D2:EQUB 21+D2
+      EQUB 22+D2:EQUB 22+D1:EQUB 22+D1:EQUB 22+D1:EQUB 22+D1
+      EQUB 24+D2:EQUB 22+D2:EQUB 24+D2
+      EQUB 25+D2:EQUB 25+D1:EQUB 25+D1:EQUB 25+D1:EQUB 25+D1
+      EQUB 27+D2:EQUB 25+D2:EQUB 27+D2
+      EQUB 28+D2:EQUB 28+D1:EQUB 28+D1:EQUB 28+D1:EQUB 28+D1
+      EQUB 30+D2:EQUB 28+D2:EQUB 30+D2
+      EQUB 32+D1
+      EQUB 0
+ .HIGH3
+      EQUB 7+D4:EQUB 10+D4:EQUB 13+D4:EQUB 20+D3:EQUB 22+D3:EQUB 24+D4
+      EQUB 0
+ 
+ \Every 6 levels Music
+ 
+ .EVRY61
+      EQUB 31+D4:EQUB 31+D1:EQUB 31+D1:EQUB 31+D1:EQUB 31+D1
+      EQUB 31+D2:EQUB 31+D2:EQUB 7+D2:EQUB 7+D2
+      EQUB 31+D2:EQUB 31+D1:EQUB 31+D1:EQUB 31+D2:EQUB 31+D4
+      EQUB 31+D2:EQUB 7+D2:EQUB 7+D2
+      EQUB 31+D4:EQUB 31+D1:EQUB 31+D1:EQUB 31+D1:EQUB 31+D1
+      EQUB 31+D2:EQUB 31+D2:EQUB 7+D2:EQUB 7+D2
+      EQUB 31+D2:EQUB 31+D1:EQUB 31+D1:EQUB 31+D2:EQUB 31+D4
+      EQUB 31+D2:EQUB 7+D2:EQUB 7+D2
+      EQUB 0
+ .EVRY62
+      EQUB Rest+D1
+ .EVRY63
+      EQUB 19+D4:EQUB Rest+D4:EQUB 19+D2:EQUB 19+D2:EQUB 19+D2:EQUB 19+D2
+      EQUB 19+D4:EQUB 19+D4:EQUB 7+D4:EQUB 7+D4
+      EQUB 19+D4:EQUB 19+D2:EQUB 19+D2:EQUB 19+D4:EQUB 19+D4:EQUB Rest+D4
+      EQUB 19+D4:EQUB 7+D4:EQUB 7+D2
+      EQUB 0
+ 
+ 
+\ Plays Tune given in Y, Checks for end AFTER a note is played!
+ 
+.tune
+ JSR StartTune
+.tune0
+ JSR spcts0:BEQ tune1:\ Check for space key
+ JSR fx19:JSR Refresh
+ JSR MusicTest:BNE tune0
+ RTS
+ 
+.tune1
+ JMP Stop
+ 
+\\ ]
+\\ PRINT"Music 1    from &";~B%;" to &";~P%-1;" (";P%-B%;")"
+\\ PAGE=PG%:RETURN
