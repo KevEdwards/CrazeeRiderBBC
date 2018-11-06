@@ -8,7 +8,7 @@
 
 In 1986 I began writing a motorcycle racing game for the BBC Micro, Electron and Master 128 home computers. This game was published by Superior Software in 1987 under the name Crazee Rider.
 
-The game is written entirely in 6502 assemmbly language. The target computers had only 32K bytes of RAM. Of which 10K bytes was required for the video memory.
+The game is written entirely in 6502 assembly language. The target computers had only 32K bytes of RAM. Of which 10K bytes was required for the video memory.
 
 Over 30 years have passed and I have decided to preserve this code for the future by making it public.
 
