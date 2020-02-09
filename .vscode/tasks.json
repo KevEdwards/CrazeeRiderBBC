@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "command": "cmd",
+    "isShellCommand": true,
+    "showOutput": "always",
+    "echoCommand": true,
+    "suppressTaskName": true,
+    "args": [
+        "/C"
+    ],
+    "tasks": [
+        {
+            "taskName": "Assemble Crazee Rider source and generate CrazeeRiderBBC.ssd",
+            "problemMatcher": {
+                "owner": "6502",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            },
+            "args": [
+                "make.bat"
+            ],
+            "isBuildCommand": true
+        },
+        {
+            "taskName": "Run 'CrazeeRiderBBC.ssd' in Emulator",
+            "isTestCommand": true,
+            "args": [
+                "B-Em.exe CrazeeRiderBBC.ssd"
+            ]
+        }
+    ]
+}
